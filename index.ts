@@ -85,7 +85,7 @@ async function getLinks(idOrQuery: Array<string> | string, data: { type: number,
                 if(pans && pans.token) {
                     const headers = {"Cookie": `.ROBLOSECURITY=${pans.token}`, "Content-Type": "application/json"}
                     const res = await get("https://users.roblox.com/v1/users/authenticated", { headers: headers }).catch((err: Error) => {
-                        console.error(chalk.red`Failed to authenticate.\n=> {white ${err}}`);
+                        console.error(chalk.red`Failed to authenticate.\n=> {white ${err.name} // ${err.message}}`);
                         process.exit(1);
                     });
                     
@@ -119,7 +119,7 @@ async function getLinks(idOrQuery: Array<string> | string, data: { type: number,
                 const pans = await prompt([{ type: "editor", name: "token", message: "Enter your .ROBLOSECURITY cookie." }]).catch(inquirerError);
                 if(pans && pans.token) {
                     const res = await get("https://users.roblox.com/v1/users/authenticated", { headers: {"Cookie": ".ROBLOSECURITY="+cookie} }).catch((err: Error) => {
-                        console.error(chalk.red`Failed to authenticate.\n-> {white ${err}}`);
+                        console.error(chalk.red`Failed to authenticate.\n-> {white ${err.name} // ${err.message}}`);
                     });
 
                     if(res) {
@@ -232,8 +232,8 @@ const mimeAudioTypes: any = { "mpeg": ".MP3", "ogg": ".OGG", "wav": ".WAV", "oct
 
 // Not bandwidth safe
 async function download(ids: Array<string> | any, path: string) {
-    await mkdir(resolve(path, "binaries"), {recursive: true}).catch(err => {
-        console.error(chalk.red`Failed to create audio directory!\n=> {white ${err}}`);
+    await mkdir(resolve(path, "binaries"), {recursive: true}).catch((err: Error) => {
+        console.error(chalk.red`Failed to create audio directory!\n=> {white ${err.name} // ${err.message}}`);
         process.exit(1);
     });
 
@@ -271,7 +271,7 @@ function dInv(id: string | number, path: string, data?: any, dataId?: string): P
         } else {
             console.log(chalk.inverse(`Getting asset ID ${id}`));
             const response = await get(`https://www.roblox.com/library/${id}`, { followRedirects: true, headers: {"Content-Type": "text/html"} })
-                .catch(err => reject(chalk.red`Failed to get site for ID {white ${truncate(id, 20)}}.\n-> {white ${err}}`));
+                .catch(err => reject(chalk.red`Failed to get site for ID {white ${truncate(id, 20)}}.\n-> {white ${err.name} // ${err.message}}`));
             if(response) {
                 const document = new JSDOM(response.content).window.document,
                     player = document.getElementsByClassName("MediaPlayerIcon icon-play")[0],
@@ -286,7 +286,7 @@ function dInv(id: string | number, path: string, data?: any, dataId?: string): P
         }
         
         const audioCont = await get(src!, {passRes: true, headers: {"Accept": "audio/mpeg;q=1.0, audio/ogg;q=0.9, audio/wav;q=0.8, application/octet-stream", "Content-Disposition": "attachment"}})
-            .catch(err => reject(chalk.red`Failed to audio data for ID {white ${truncate(id, 20)}}. ({white ${fname}})\n-> {white ${err}}`));
+            .catch(err => reject(chalk.red`Failed to audio data for ID {white ${truncate(id, 20)}}. ({white ${fname}})\n-> {white ${err.name} // ${err.message}}`));
             
             if(audioCont) {
                 const extension = audioCont.headers["content-type"]!.match(/(?!.*\/)([\w]*)/)![0], joined = fname + (mimeAudioTypes.hasOwnProperty(extension) ? mimeAudioTypes[extension]! : extension);
@@ -308,7 +308,7 @@ function dInv(id: string | number, path: string, data?: any, dataId?: string): P
                     presolve(chalk.green("Downloaded.\n"));
                 }).on("error", err => {
                     fHandle.destroy();
-                    reject(chalk.red`Failed to write.\n-> {white ${err}}`);
+                    reject(chalk.red`Failed to write.\n-> {white ${err.name} // ${err.message}}`);
                 });
             }
     });
