@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Created because I felt Chedski/rbxaudiodl was insufficient",
   "main": "index.js",
-  "bin": "index.js",
+  "bin": "index.m.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ATPStorages/GetDataRBLX.git"

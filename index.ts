@@ -84,7 +84,7 @@ async function getLinks(idOrQuery: Array<string> | string, data: { type: number,
                 const pans = await prompt([{ type: "editor", name: "token", message: "Enter your .ROBLOSECURITY cookie." }]).catch(inquirerError);
                 if(pans && pans.token) {
                     const headers = {"Cookie": `.ROBLOSECURITY=${pans.token}`, "Content-Type": "application/json"}
-                    const res = await get("https://users.roblox.com/v1/users/authenticated", { headers: headers, passRes: false }).catch((err: Error) => {
+                    const res = await get("https://users.roblox.com/v1/users/authenticated", { headers: headers }).catch((err: Error) => {
                         console.error(chalk.red`Failed to authenticate.\n=> {white ${err}}`);
                         process.exit(1);
                     });
@@ -113,16 +113,35 @@ async function getLinks(idOrQuery: Array<string> | string, data: { type: number,
 
             break;
         case 2: // Users
+            let cookie = "";
+            const tans = await prompt([{ type: "confirm", name: "authorize", message: chalk.bgRed("Would you like to authenticate using your .ROBLOSECURITY? (This is unsafe; only use it if your main account is privated)"), default: false }]).catch(inquirerError);
+            if(tans && tans.authorize === true) {
+                const pans = await prompt([{ type: "editor", name: "token", message: "Enter your .ROBLOSECURITY cookie." }]).catch(inquirerError);
+                if(pans && pans.token) {
+                    const res = await get("https://users.roblox.com/v1/users/authenticated", { headers: {"Cookie": ".ROBLOSECURITY="+cookie} }).catch((err: Error) => {
+                        console.error(chalk.red`Failed to authenticate.\n-> {white ${err}}`);
+                    });
+
+                    if(res) {
+                        console.log(chalk.green`You have been authenticated as "{white ${res.content.name}}," or "{white ${res.content.displayName}}."`);
+                        const user = await prompt([{ type: "confirm", name: "confirm", message: `Do you want to use this account?`}]).catch(inquirerError);
+                        if(user && user.confirm) cookie = pans.token;
+                    }
+                } else {
+                    console.error(chalk.red("No token entered/received"));
+                }
+            }
+
             for(const id of idOrQuery) {
                 console.log(chalk.inverse(`Crawling user ID ${truncate(id, 13)}`));
-                const res = await get(`https://inventory.roblox.com/v1/users/${id}/can-view-inventory`).catch(ret => {
+                const res = await get(`https://inventory.roblox.com/v1/users/${id}/can-view-inventory`, { headers: {"Cookie": ".ROBLOSECURITY="+cookie} }).catch(ret => {
                     // Limit IDs up to 13 characters (Maximum ID no. of 1 Trillion)
                     console.error(chalk.red`Unable to get inventory from user ID {white ${truncate(id, 13)}}\n-> {white ${ret.error}}${ret.content.errors[0] ? chalk.red`\n-> {white ${ret.content.errors[0].message}}` : ""}`);
                 });
 
                 if(res) {
                     if(res.content && res.content.canView === true) {
-                        const colID = await userInvCrawl(id).catch(console.error);
+                        const colID = await userInvCrawl(id, { cookie: cookie }).catch(console.error);
 
                         if(colID) {
                             audioList = [...new Set([...audioList,...colID])];
@@ -164,10 +183,10 @@ async function getLinks(idOrQuery: Array<string> | string, data: { type: number,
 }
 
 // // //
-async function userInvCrawl(playerId: string | number, options: { checkAccess?: boolean, maxPages?: number | string, limit?: number | string } = {}, page: number = 0, cursor?: string): Promise<(string)[]> {
+async function userInvCrawl(playerId: string | number, options: { checkAccess?: boolean, maxPages?: number | string, limit?: number | string, cookie?: string } = {}, page: number = 0, cursor?: string): Promise<(string)[]> {
     return new Promise(async(resolve, reject) => {
         let list: Array<string> = [];
-        const ares = await get(`https://inventory.roblox.com/v2/users/${playerId}/inventory/3?sortOrder=Desc&limit=100${cursor ? `&cursor=${cursor}` : ""}`).catch(ret => {
+        const ares = await get(`https://inventory.roblox.com/v2/users/${playerId}/inventory/3?sortOrder=Desc&limit=100${cursor ? `&cursor=${cursor}` : ""}`, { headers: {"Cookie": ".ROBLOSECURITY="+options.cookie} }).catch(ret => {
             // Limit IDs up to 13 characters (Maximum ID no. of 1 Trillion)
             reject(chalk.red`Failed to get inventory from user ID {white ${truncate(playerId, 13)}}\n-> {white ${ret.error}}${ret.content.errors[0] ? chalk.red`\n-> {white ${ret.content.errors[0].message}}` : ""}`)
         });
