@@ -1,6 +1,6 @@
 {
   "name": "getdatarblx",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Created because I felt Chedski/rbxaudiodl was insufficient",
   "main": "index.js",
   "bin": "index.m.js",
