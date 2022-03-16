@@ -84,8 +84,8 @@ async function getLinks(idOrQuery: Array<string> | string, data: { type: number,
                 const pans = await prompt([{ type: "editor", name: "token", message: "Enter your .ROBLOSECURITY cookie." }]).catch(inquirerError);
                 if(pans && pans.token) {
                     const headers = {"Cookie": `.ROBLOSECURITY=${pans.token}`, "Content-Type": "application/json"}
-                    const res = await get("https://users.roblox.com/v1/users/authenticated", { headers: headers }).catch((err: Error) => {
-                        console.error(chalk.red`Failed to authenticate.\n=> {white ${err.name} // ${err.message}}`);
+                    const res = await get("https://users.roblox.com/v1/users/authenticated", { headers: headers }).catch(err => {
+                        console.error(chalk.red`Failed to authenticate.\n=> {white ${err.error ? `${err.error}` : `${err.name} // ${err.message}`}${err.content.errors[0] ? `\n=> ${err.content.errors[0].message}` : ""}}`);
                         process.exit(1);
                     });
                     
@@ -118,8 +118,8 @@ async function getLinks(idOrQuery: Array<string> | string, data: { type: number,
             if(tans && tans.authorize === true) {
                 const pans = await prompt([{ type: "editor", name: "token", message: "Enter your .ROBLOSECURITY cookie." }]).catch(inquirerError);
                 if(pans && pans.token) {
-                    const res = await get("https://users.roblox.com/v1/users/authenticated", { headers: {"Cookie": ".ROBLOSECURITY="+cookie} }).catch((err: Error) => {
-                        console.error(chalk.red`Failed to authenticate.\n-> {white ${err.name} // ${err.message}}`);
+                    const res = await get("https://users.roblox.com/v1/users/authenticated", { headers: {"Cookie": ".ROBLOSECURITY="+cookie} }).catch(err => {
+                        console.error(chalk.red`Failed to authenticate.\n\n-> {white ${err.error ? `${err.error}` : `${err.name} // ${err.message}`}${err.content.errors[0] ? `\n-> ${err.content.errors[0].message}` : ""}}`);
                     });
 
                     if(res) {
@@ -136,7 +136,7 @@ async function getLinks(idOrQuery: Array<string> | string, data: { type: number,
                 console.log(chalk.inverse(`Crawling user ID ${truncate(id, 13)}`));
                 const res = await get(`https://inventory.roblox.com/v1/users/${id}/can-view-inventory`, { headers: {"Cookie": ".ROBLOSECURITY="+cookie} }).catch(ret => {
                     // Limit IDs up to 13 characters (Maximum ID no. of 1 Trillion)
-                    console.error(chalk.red`Unable to get inventory from user ID {white ${truncate(id, 13)}}\n-> {white ${ret.error}}${ret.content.errors[0] ? chalk.red`\n-> {white ${ret.content.errors[0].message}}` : ""}`);
+                    console.error(chalk.red`Unable to get inventory from user ID {white ${truncate(id, 13)}}\n-> {white ${ret.error}${ret.content.errors[0] ? chalk.red`\n-> ${ret.content.errors[0].message}` : ""}}`);
                 });
 
                 if(res) {
@@ -163,7 +163,7 @@ async function getLinks(idOrQuery: Array<string> | string, data: { type: number,
             for(let pn = 1; pn <= data.pages!; pn++) {
                 console.log(chalk.inverse(`Searching through library query ${truncated} - Page number ${pn}`));
                 const res = await get(`https://search.roblox.com/catalog/json?Category=9&SortType=3&ResultsPerPage=${data.limit}&CreatorId=${lcid}&PageNumber=${pn}&Keyword=${idOrQuery}`).catch(ret => {
-                    console.error(chalk.red`Unable to get library query {white ${truncated}}\n-> {white ${ret.error}}${ret.content.errors[0] ? chalk.red`\n-> {white ${ret.content.errors[0].message}}` : ""}`);
+                    console.error(chalk.red`Unable to get library query {white ${truncated}}\n-> {white ${ret.error}${ret.content.errors[0] ? chalk.red`\n-> ${ret.content.errors[0].message}` : ""}}`);
                   });
                 
                 if(res && res.content.length > 0) {
@@ -188,7 +188,7 @@ async function userInvCrawl(playerId: string | number, options: { checkAccess?: 
         let list: Array<string> = [];
         const ares = await get(`https://inventory.roblox.com/v2/users/${playerId}/inventory/3?sortOrder=Desc&limit=100${cursor ? `&cursor=${cursor}` : ""}`, { headers: {"Cookie": ".ROBLOSECURITY="+options.cookie} }).catch(ret => {
             // Limit IDs up to 13 characters (Maximum ID no. of 1 Trillion)
-            reject(chalk.red`Failed to get inventory from user ID {white ${truncate(playerId, 13)}}\n-> {white ${ret.error}}${ret.content.errors[0] ? chalk.red`\n-> {white ${ret.content.errors[0].message}}` : ""}`)
+            reject(chalk.red`Failed to get inventory from user ID {white ${truncate(playerId, 13)}}\n-> {white ${ret.error}${ret.content.errors[0] ? chalk.red`\n-> ${ret.content.errors[0].message}` : ""}}`)
         });
 
         if(ares && ares.content && ares.content.data && ares.content.data.length > 0) {
@@ -211,7 +211,7 @@ function grpAstCrawl(groupId: string | number, cheaders: any, options: { checkAc
     return new Promise(async(resolve, reject) => {
         let list: Array<string> = [];
         const ares = await get(`https://itemconfiguration.roblox.com/v1/creations/get-assets?assetType=3&groupId=${groupId}&limit=100${cursor ? `&cursor=${cursor}` : ""}`, { headers: cheaders }).catch(ret => {
-            reject(chalk.red`Failed to get assets from group ID {white ${truncate(groupId, 13)}}\n-> {white ${ret.error}}${ret.content.errors[0] ? chalk.red`\n-> {white ${ret.content.errors[0].message}}` : ""}`)
+            reject(chalk.red`Failed to get assets from group ID {white ${truncate(groupId, 13)}}\n-> {white ${ret.error}${ret.content.errors[0] ? chalk.red`\n-> ${ret.content.errors[0].message}` : ""}}`)
         });
 
         if(ares && ares.content && ares.content.data && ares.content.data.length > 0) {
@@ -232,8 +232,8 @@ const mimeAudioTypes: any = { "mpeg": ".MP3", "ogg": ".OGG", "wav": ".WAV", "oct
 
 // Not bandwidth safe
 async function download(ids: Array<string> | any, path: string) {
-    await mkdir(resolve(path, "binaries"), {recursive: true}).catch((err: Error) => {
-        console.error(chalk.red`Failed to create audio directory!\n=> {white ${err.name} // ${err.message}}`);
+    await mkdir(resolve(path, "binaries"), {recursive: true}).catch(err => {
+        console.error(chalk.red`Failed to create audio directory!\n=> {white ${err.error ? `${err.error}` : `${err.name} // ${err.message}`}${err.content.errors[0] ? `\n=> ${err.content.errors[0].message}` : ""}}`);
         process.exit(1);
     });
 
@@ -271,7 +271,7 @@ function dInv(id: string | number, path: string, data?: any, dataId?: string): P
         } else {
             console.log(chalk.inverse(`Getting asset ID ${id}`));
             const response = await get(`https://www.roblox.com/library/${id}`, { followRedirects: true, headers: {"Content-Type": "text/html"} })
-                .catch(err => reject(chalk.red`Failed to get site for ID {white ${truncate(id, 20)}}.\n-> {white ${err.name} // ${err.message}}`));
+                .catch(err => reject(chalk.red`Failed to get site for ID {white ${truncate(id, 20)}}.\n-> {white ${err.error ? `${err.error}` : `${err.name} // ${err.message}`}${err.content.errors[0] ? `\n-> ${err.content.errors[0].message}` : ""}}`));
             if(response) {
                 const document = new JSDOM(response.content).window.document,
                     player = document.getElementsByClassName("MediaPlayerIcon icon-play")[0],
@@ -286,7 +286,7 @@ function dInv(id: string | number, path: string, data?: any, dataId?: string): P
         }
         
         const audioCont = await get(src!, {passRes: true, headers: {"Accept": "audio/mpeg;q=1.0, audio/ogg;q=0.9, audio/wav;q=0.8, application/octet-stream", "Content-Disposition": "attachment"}})
-            .catch(err => reject(chalk.red`Failed to audio data for ID {white ${truncate(id, 20)}}. ({white ${fname}})\n-> {white ${err.name} // ${err.message}}`));
+            .catch(err => reject(chalk.red`Failed to audio data for ID {white ${truncate(id, 20)}}. ({white ${fname}})\n-> {white ${err.error ? `${err.error}` : `${err.name} // ${err.message}`}${err.content.errors[0] ? `\n-> ${err.content.errors[0].message}` : ""}}`));
             
             if(audioCont) {
                 const extension = audioCont.headers["content-type"]!.match(/(?!.*\/)([\w]*)/)![0], joined = fname + (mimeAudioTypes.hasOwnProperty(extension) ? mimeAudioTypes[extension]! : extension);
