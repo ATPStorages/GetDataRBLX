@@ -22,6 +22,8 @@ For the next steps, you will need to open your system's terminal.
 * Linux / Other non-standard operating systems
   * I expect you to know what you are doing.
 
+*Note: Typically you will need to run your Terminal as an administrative user to install global commands. If you already have most of these installed, however, you can move on.*
+
 If you don't already have the `tsc` (TypeScript Compiler) command installed on your computer, run `npm install -g typescript`.
 
 [Download](https://github.com/ATPStorages/GetDataRBLX/archive/refs/heads/master.zip) and extract the `main` branch of GetDataRBLX.
